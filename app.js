@@ -21,7 +21,7 @@ mongoose.set('useFindAndModify', false);
 // mongoose.connect("mongodb://localhost/to-do", {useNewUrlParser: true});
 
 // MongoDB Atlas
-mongoose.connect("mongodb+srv://kedarg:<password>@cluster0-dxoty.mongodb.net/test?retryWrites=true&w=majority", {
+mongoose.connect("mongodb+srv://kedarg:Bhairavi01!@cluster0-dxoty.mongodb.net/test?retryWrites=true&w=majority", {
   useNewUrlParser: true,
   useCreateIndex: true
 }).then(() =>{
