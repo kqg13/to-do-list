@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>my to-do list</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="stylesheets/todos.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.css">
+    <script type="text/javascript" src="js/lib/jquery-3.5.0.min.js"></script>
+  </head>
+
+  <body>
+    <div class="topnav">
+            <% if (!currentUser) { %>
+               <a href="/login"><i class="fa fa-fw fa-sign-in"></i> Login</a>
+               <a href="/register"><i class="fa fa-fw fa-user"></i> Register</a>
+            <% } %>
+          <div class="topnav-right">
+             <a href="/save"><i class="fa fa-fw fa-save"></i> Save</a>
+             <% if (currentUser) { %>
+               <a href="/logout"><i class="fa fa-fw fa-sign-out"></i> Logout</a>
+             <% } %>
+          </div>
+    </div>
+
+    <div class="container" align="center">
+       <% if(error && error.length > 0){ %>
+           <div class="alert alert-danger" role="alert">
+               <%= error %>
+           </div>
+       <% } %>
+       <% if(success && success.length > 0){ %>
+           <div class="alert alert-success" role="alert">
+               <%= success %>
+           </div>
+       <% } %>
+    </div>
+
+    <div id="container">
+      <% if (currentUser) { %>
+          <h1><%= currentUser.username %>'s to-do list <i class="fa fa-plus"></i></h1>
+
+          <form action="/todos" method="POST">
+            <input type="text" placeholder="Add new to-do" name="todo[task]">
+          </form>
+
+          <ul>
+            <% todos.forEach(function(todo) {
+              if (todo.isCompleted) { %>
+              <li class="completed">
+            <% } else { %>
+              <li class="">
+        <% } %>
+          <span>
+            <form class="delete-form" action="/todos/<%= todo._id %>?_method=DELETE" method="POST">
+            <button class="formbtn" type="submit">
+              <span class="trash"><i class="fa fa-trash"></i></span>
+            </button>
+          </form>
+          <form class="edit-form" action="/todos/<%= todo._id %>?_method=PUT" method="POST">
+            <input type="hidden" value="<%=todo.isCompleted %>" name="todo[comp]">
+          </form>
+        </span>
+        <%= todo.toDo %></li>
+
+      <% }) %>
+        </ul>
+      <!-- Unathenticated user -->
+      <% } else { %>
+          <h1>to-do list <i class="fa fa-plus"></i></h1>
+          <input type="text" placeholder="Add new to-do">
+          <ul>
+          </ul>
+      <% } %>
+    </div>
+
+  <!-- Client side jQuery -->
+    <script>
+
+        // Mark todo complete by clicking: 'on' adds listener for future li
+        $("ul").on("click", "li", function() {
+          $(this).toggleClass("completed");
+
+          <% if (currentUser) { %>
+            var thisForm = $(this).find(".edit-form")[0];
+            thisForm.submit(function(event) {
+              var formAction = $(this).attr('action');
+              $.ajax({
+                method: 'PUT',
+                url: formAction
+              }).success((data) => {
+                console.log("Successful ajax call");
+              }).fail((error) => {
+                console.log("Failed ajax call");
+              });
+            })
+
+            $(".delete-form").submit(function() {
+              // debugger
+              // var thisSpan = $(this).find(".trash")[0]
+              var thisLi = $(this).closest("li")[0];
+              $(this).parent().fadeOut(500, function() {
+                thisLi.remove();
+              });
+              return true;
+            });
+          <% } %>
+        });
+
+        // Toggle input
+        $(".fa-plus").click(function() {
+          $("input[type='text']").fadeToggle();
+        });
+
+        // Add new todo for unauthenticated user
+        <% if (!currentUser) { %>
+          $("input[type='text']").keypress(function(event) {
+            var todoText = $(this).val();
+            if (event.which === 13) {
+               if($.trim(todoText) !== '') {
+                 // Clear input
+                 $(this).val("");
+                 // Create a new li and add to ul
+                 $("ul").append("<li><span><i class='fa fa-trash'></i></span> " + todoText+ "</li>");
+               }
+            }
+        });
+
+        // Delete todo for unauthenticated user
+        $("ul").on("click", "span", function(event) {
+          // setTimeout(() => {}, 15000);
+          // without parent only the span will go away
+          $(this).parent().fadeOut(500, function () {
+            $(this).remove()
+          });
+          event.stopPropagation();
+        });
+      <% } %>
+
+    </script>
+
+  </body>
+</html>
