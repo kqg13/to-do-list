@@ -26,10 +26,22 @@ var User              =     require("./models/user"),
 // Use the environment variable for the MongoDB URI
 const mongoURI = process.env.MONGODB_URI;
 
+if (!mongoURI) {
+    console.error("MONGODB_URI is not defined. Please check your .env file.");
+    process.exit(1); // Exit the application if URI is not set
+}
+
 mongoose.connect(mongoURI, {
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
 })
-.then(() => console.log("MongoDB connected"))
-.catch(err => console.error("MongoDB connection error:", err));
+.then(() => {
+    console.log("MongoDB connected successfully");
+})
+.catch(err => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1); // Exit the application on connection error
+});
 
 // Seed the database
 // seedDB();
