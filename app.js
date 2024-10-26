@@ -18,6 +18,7 @@ var User              =     require("./models/user"),
 // DB setup
 
 // MongoDB Atlas
+
 // <password>
 
 mongoose.connect("mongodb+srv://kedarg:9ZmijcNyJ89RtImV@cluster0.dxoty.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
