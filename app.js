@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 var express           =     require("express"),
     app               =     express(),
     expressSanitizer  =     require("express-sanitizer"),
@@ -21,12 +23,13 @@ var User              =     require("./models/user"),
 
 // <password>
 
-mongoose.connect("mongodb+srv://kedarg:9ZmijcNyJ89RtImV@cluster0.dxoty.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
-}).then(() =>{
-  console.log('Connected to DB!');
-}).catch(err => {
-  console.log('ERROR: ', err.message);
-});
+// Use the environment variable for the MongoDB URI
+const mongoURI = process.env.MONGODB_URI;
+
+mongoose.connect(mongoURI, {
+})
+.then(() => console.log("MongoDB connected"))
+.catch(err => console.error("MongoDB connection error:", err));
 
 // Seed the database
 // seedDB();
