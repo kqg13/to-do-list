@@ -1,6 +1,9 @@
 {
   "name": "to-do-list",
   "version": "1.0.0",
+  "engines": {
+    "node": "22.x"
+  },
   "description": "Simple to-do",
   "main": "app.js",
   "scripts": {
