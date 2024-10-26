@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+const connectionState = require('./connectionState');
+connectionState.connectDB(); // Call the connectDB function
+
 var express           =     require("express"),
     app               =     express(),
     expressSanitizer  =     require("express-sanitizer"),
@@ -16,32 +19,6 @@ var passport          =     require("passport"),
 
 var User              =     require("./models/user"),
     ToDo              =     require("./models/todo");
-
-// DB setup
-
-// MongoDB Atlas
-
-// <password>
-
-// Use the environment variable for the MongoDB URI
-const mongoURI = process.env.MONGODB_URI;
-
-if (!mongoURI) {
-    console.error("MONGODB_URI is not defined. Please check your .env file.");
-    process.exit(1); // Exit the application if URI is not set
-}
-
-mongoose.connect(mongoURI, {
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
-})
-.then(() => {
-    console.log("MongoDB connected successfully");
-})
-.catch(err => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1); // Exit the application on connection error
-});
 
 // Seed the database
 // seedDB();
@@ -122,7 +99,7 @@ app.post("/todos", middleware.isLoggedIn, async (req, res) => {
 
 app.delete("/todos/:id", middleware.isLoggedIn, async (req, res) => {
   try {
-    await ToDo.findByIdAndRemove(req.params.id);
+    await ToDo.findByIdAndDelete(req.params.id);
     res.redirect("/todos");
   } catch (err) {
     console.error(err);
