@@ -16,20 +16,17 @@ var User              =     require("./models/user"),
     ToDo              =     require("./models/todo");
 
 // DB setup
-mongoose.set('useUnifiedTopology', true);
-mongoose.set('useFindAndModify', false);
-// mongoose.connect("mongodb://localhost/to-do", {useNewUrlParser: true});
 
 // MongoDB Atlas
 // <password>
-mongoose.connect("mongodb+srv://kedarg:9ZmijcNyJ89RtImV@cluster0-dxoty.mongodb.net/test?retryWrites=true&w=majority", {
-  useNewUrlParser: true,
-  useCreateIndex: true
+
+mongoose.connect("mongodb+srv://kedarg:9ZmijcNyJ89RtImV@cluster0.dxoty.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
 }).then(() =>{
   console.log('Connected to DB!');
 }).catch(err => {
   console.log('ERROR: ', err.message);
 });
+
 // Seed the database
 // seedDB();
 
@@ -68,65 +65,68 @@ app.get("/", (req, res) => {
     res.redirect("/todos");
 });
 
-app.get("/todos", (req, res) => {
+app.get("/todos", async (req, res) => {
   if (req.isAuthenticated()) {
-    ToDo.find({'author.username': req.user.username}, (err, allToDos) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.render("index", {todos: allToDos});
-      }
-    });
+    try {
+      const allToDos = await ToDo.find({ 'author.username': req.user.username });
+      res.render("index", { todos: allToDos });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Internal Server Error");
+    }
   } else {
     res.render("index");
   }
 });
+
 
 app.get("/save", middleware.isLoggedIn, (req, res) => {
   req.flash("success", "Your to-do list was saved!");
   res.redirect("/todos");
 });
 
-app.post("/todos", middleware.isLoggedIn, (req, res) => {
-  var task = req.sanitize(req.body.todo.task);
-  var author = {id: req.user._id, username: req.user.username}
-  var newToDo = {toDo: task, isCompleted: false, author: author};
+app.post("/todos", middleware.isLoggedIn, async (req, res) => {
+  const task = req.sanitize(req.body.todo.task);
+  const author = { id: req.user._id, username: req.user.username };
+  const newToDo = { toDo: task, isCompleted: false, author };
 
   if (task && task.length > 0) {
-    ToDo.create(newToDo, (err, newlyCreated) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.redirect("/");
-      }
-    });
+    try {
+      await ToDo.create(newToDo);
+      res.redirect("/");
+    } catch (err) {
+      console.log(err);
+      res.redirect("/");
+    }
   } else {
     res.redirect("/");
   }
 });
 
-app.delete("/todos/:id", middleware.isLoggedIn, (req, res) => {
-  ToDo.findByIdAndRemove(req.params.id, (err, removedTask) => {
-    if (err) {
-      res.redirect("/todos");
-    } else {
-      res.redirect("/todos");
-    }
-  });
+
+app.delete("/todos/:id", middleware.isLoggedIn, async (req, res) => {
+  try {
+    await ToDo.findByIdAndRemove(req.params.id);
+    res.redirect("/todos");
+  } catch (err) {
+    console.error(err);
+    res.redirect("/todos");
+  }
 });
 
-app.put("/todos/:id", middleware.isLoggedIn, (req, res) => {
-  var isCompleted = !(req.body.todo.comp == 'true')
 
-  ToDo.findByIdAndUpdate(req.params.id, {$set: {"isCompleted": isCompleted}}, (err, todo) => {
-    if (err) {
-      console.log("DB did not update properly");
-      res.redirect("/todos");
-    } else {
-      res.redirect("/todos");
-    }
-  });
+app.put("/todos/:id", middleware.isLoggedIn, async (req, res) => {
+  const isCompleted = !(req.body.todo.comp === 'true');
+
+  try {
+    await ToDo.findByIdAndUpdate(req.params.id, { $set: { isCompleted } });
+    res.redirect("/todos");
+  } catch (err) {
+    console.log("DB did not update properly", err);
+    res.redirect("/todos");
+  }
 });
+
 
 // ========================================
 // Auth ROUTES
@@ -141,19 +141,20 @@ app.get("/register", (req, res) => {
 
 // Sign-up logic- passport called within route handler which gives us access
 // to req and res objects through closure
-app.post("/register", (req, res) => {
-  var newUser = new User({username: req.body.username});
-  User.register(newUser, req.body.password, (err, user) => {
-    if (err) {
-      req.flash("error", err.message);
-      return res.render("register", {"error": err.message});
+app.post("/register", async (req, res) => {
+    try {
+        const newUser = new User({ username: req.body.username });
+        await User.register(newUser, req.body.password);
+        passport.authenticate("local")(req, res, () => {
+            req.flash("success", "Successfully signed up " + req.body.username);
+            res.redirect("/");
+        });
+    } catch (err) {
+        req.flash("error", err.message);
+        return res.render("register", { "error": err.message });
     }
-    passport.authenticate("local")(req, res, () => {
-      req.flash("success", "Successfully signed up " + req.body.username);
-      res.redirect("/");
-    });
-  });
 });
+
 
 // Login logic - passport is used as route middleware
 app.post("/login", passport.authenticate("local",
@@ -164,10 +165,16 @@ app.post("/login", passport.authenticate("local",
 });
 
 app.get("/logout", (req, res) => {
-   req.logout();
-   req.flash("success", "Logged you out!");
-   res.redirect("/todos");
+    req.logOut(err => {
+        if (err) {
+            console.error(err);
+            return res.redirect("/todos");
+        }
+        req.flash("success", "Logged you out!");
+        res.redirect("/todos");
+    });
 });
+
 
 // ========================================
 // Other
